@@ -18,7 +18,11 @@ jobs:
           URL="https://${HOST}/functions/v1/push-worker"
 
           echo "== DNS check =="
-          getent hosts "${HOST}" || true
+          if ! getent hosts "${HOST}" >/dev/null; then
+            echo "ERROR: DNS failed for ${HOST}"
+            exit 1
+          fi
+          echo "DNS OK"
 
           echo "== Request =="
           echo "URL: ${URL}"
@@ -31,15 +35,22 @@ jobs:
               -X POST "${URL}" \
               -H "Content-Type: application/json" \
               -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -H "User-Agent: famigo-push-cron/1.0" \
               -d '{}' \
               -o response.json \
               -w "%{http_code}"
           )"
 
           echo "HTTP_STATUS=${HTTP_STATUS}"
-          echo "== Body (first 2000 chars) =="
-          head -c 2000 response.json || true
-          echo
+
+          echo "== Body (preview) =="
+          # Ako je JSON, pokušaj izvući samo ključne brojke; ako nije, ispiši prvih 500 znakova
+          if command -v jq >/dev/null 2>&1 && jq -e . >/dev/null 2>&1 < response.json; then
+            jq '{ok, found, processed, remaining, ts}' response.json || cat response.json
+          else
+            head -c 500 response.json || true
+            echo
+          fi
 
           if [[ "${HTTP_STATUS}" != "200" ]]; then
             echo "ERROR: push-worker returned HTTP ${HTTP_STATUS}"
