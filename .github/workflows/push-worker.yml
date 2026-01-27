@@ -15,16 +15,16 @@ jobs:
           set -euo pipefail
 
           echo "== DNS check =="
-          getent hosts lfqmdihzsnrywqujwzw.supabase.co || true
+          getent hosts lfqomdihzsnrywqujwzw.supabase.co || true
 
           echo "== Request =="
-          echo "URL: https://lfqmdihzsnrywqujwzw.supabase.co/functions/v1/push-worker"
+          echo "URL: https://lfqomdihzsnrywqujwzw.supabase.co/functions/v1/push-worker"
           echo "Auth header present: $([[ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]] && echo YES || echo NO)"
 
           echo "== CURL =="
           curl -v --show-error --location \
             --connect-timeout 15 --max-time 60 \
-            -X POST "https://lfqmdihzsnrywqujwzw.supabase.co/functions/v1/push-worker" \
+            -X POST "https://lfqomdihzsnrywqujwzw.supabase.co/functions/v1/push-worker" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -d '{}' \
