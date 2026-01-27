@@ -1,3 +1,14 @@
+name: Push worker cron
+
+on:
+  schedule:
+    - cron: "* * * * *"
+  workflow_dispatch:
+
+jobs:
+  call-worker:
+    runs-on: ubuntu-latest
+    steps:
       - name: Call Supabase push-worker (debug)
         shell: bash
         run: |
@@ -23,4 +34,3 @@
           echo "== Body (first 2000 chars) =="
           head -c 2000 response.json || true
           echo
-
