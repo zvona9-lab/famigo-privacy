@@ -1,17 +1,26 @@
-name: Push worker cron
-
-on:
-  schedule:
-    - cron: "* * * * *"
-  workflow_dispatch: {}
-
-jobs:
-  call-worker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Call Supabase push-worker
+      - name: Call Supabase push-worker (debug)
+        shell: bash
         run: |
-          curl -sS -X POST "https://lfqmdihzsnrywqujwzw.supabase.co/functions/v1/push-worker" \
+          set -euo pipefail
+
+          echo "== DNS check =="
+          getent hosts lfqmdihzsnrywqujwzw.supabase.co || true
+
+          echo "== Request =="
+          echo "URL: https://lfqmdihzsnrywqujwzw.supabase.co/functions/v1/push-worker"
+          echo "Auth header present: $([[ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]] && echo YES || echo NO)"
+
+          echo "== CURL =="
+          curl -v --show-error --location \
+            --connect-timeout 15 --max-time 60 \
+            -X POST "https://lfqmdihzsnrywqujwzw.supabase.co/functions/v1/push-worker" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -d '{}'
+            -d '{}' \
+            -o response.json \
+            -w "\nHTTP_STATUS=%{http_code}\n"
+
+          echo "== Body (first 2000 chars) =="
+          head -c 2000 response.json || true
+          echo
+
