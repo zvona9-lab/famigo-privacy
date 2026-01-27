@@ -1,0 +1,34 @@
+name: Push worker cron (backup)
+
+on:
+  schedule:
+    - cron: "1-59/2 * * * *"   # offset: 1,3,5,7...
+  workflow_dispatch:
+
+jobs:
+  call-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase push-worker (health)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          HOST="lfqomdihzsnrywqujwzw.supabase.co"
+          URL="https://${HOST}/functions/v1/push-worker"
+
+          HTTP_STATUS="$(
+            curl -sS --show-error \
+              --connect-timeout 15 --max-time 60 \
+              -X POST "${URL}" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -d '{}' \
+              -o /dev/null \
+              -w "%{http_code}"
+          )"
+
+          if [[ "${HTTP_STATUS}" != "200" ]]; then
+            echo "ERROR: push-worker returned HTTP ${HTTP_STATUS}"
+            exit 1
+          fi
