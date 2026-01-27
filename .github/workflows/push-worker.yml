@@ -9,28 +9,41 @@ jobs:
   call-worker:
     runs-on: ubuntu-latest
     steps:
-      - name: Call Supabase push-worker (debug)
+      - name: Call Supabase push-worker (health)
         shell: bash
         run: |
           set -euo pipefail
 
+          HOST="lfqomdihzsnrywqujwzw.supabase.co"
+          URL="https://${HOST}/functions/v1/push-worker"
+
           echo "== DNS check =="
-          getent hosts lfqomdihzsnrywqujwzw.supabase.co || true
+          getent hosts "${HOST}" || true
 
           echo "== Request =="
-          echo "URL: https://lfqomdihzsnrywqujwzw.supabase.co/functions/v1/push-worker"
+          echo "URL: ${URL}"
           echo "Auth header present: $([[ -n "${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" ]] && echo YES || echo NO)"
 
           echo "== CURL =="
-          curl -v --show-error --location \
-            --connect-timeout 15 --max-time 60 \
-            -X POST "https://lfqomdihzsnrywqujwzw.supabase.co/functions/v1/push-worker" \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -d '{}' \
-            -o response.json \
-            -w "\nHTTP_STATUS=%{http_code}\n"
+          HTTP_STATUS="$(
+            curl -sS --show-error --location \
+              --connect-timeout 15 --max-time 60 \
+              -X POST "${URL}" \
+              -H "Content-Type: application/json" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -d '{}' \
+              -o response.json \
+              -w "%{http_code}"
+          )"
 
+          echo "HTTP_STATUS=${HTTP_STATUS}"
           echo "== Body (first 2000 chars) =="
           head -c 2000 response.json || true
           echo
+
+          if [[ "${HTTP_STATUS}" != "200" ]]; then
+            echo "ERROR: push-worker returned HTTP ${HTTP_STATUS}"
+            exit 1
+          fi
+
+          echo "OK: push-worker call succeeded"
