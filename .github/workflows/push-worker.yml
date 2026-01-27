@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Call Supabase push-worker
         run: |
-          curl -sS -X POST "https://lfqomdihzsnrywqujwzw.supabase.co/functions/v1/push-worker" \
+          curl -sS -X POST "https://lfqmdihzsnrywqujwzw.supabase.co/functions/v1/push-worker" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -d '{}'
